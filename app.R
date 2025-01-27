@@ -29,15 +29,15 @@ ui <- function(request){
                           tabsetPanel(
                             tabPanel(
                               "Map", 
-                              highchartOutput("countrymap", height = "700px") %>% withSpinner()
+                              highchartOutput("countrymap", height = "850px") %>% withSpinner()
                             ),
                             tabPanel(
                               "Chart", 
-                              highchartOutput("chart", height = "700px") %>% withSpinner()
+                              highchartOutput("chart", height = "850px") %>% withSpinner()
                             ),
                             tabPanel(
                               "Table", 
-                              DT::dataTableOutput("data_table", height = "700px") %>% withSpinner()
+                              DT::dataTableOutput("data_table", height = "850px") %>% withSpinner()
                             ),
                           )
                         )
@@ -104,9 +104,23 @@ server <- function(input, output, session) {
       filter(year == input$year) %>%
       filter(faostat_group_name %in% input$species_choice) %>%
       filter(!is.na(supply_capita_kg)) %>%
-      # filter(supply_capita_kg > 0) %>%
+      filter(supply_capita_kg > 0) %>%# better not to show bubbles when per capita supply = 0
       rename(z = supply_capita_kg) %>%
       mutate(value_formatted = addUnits(z))
+    
+  })
+  
+  data_average <- reactive({
+    
+    {if (input$species_choice == 'All species') fbs_total
+      else fbs_group} %>%
+      filter(year == input$year) %>%
+      filter(faostat_group_name %in% input$species_choice) %>%
+      filter(!is.na(supply_capita_kg)) %>%
+      summarise_at(c("total_food_supply", "population"), sum, na.rm = TRUE) %>%
+      mutate(supply_capita_kg = total_food_supply/population*1000) %>%
+      pull() %>%
+      addUnits()
     
   })
   
@@ -116,7 +130,7 @@ server <- function(input, output, session) {
   })
   
   subtitle = reactive({
-    paste0('')
+    paste('Global average:', data_average(), 'kg/capita.')
   })
   
   source = paste0("Source: FAO ", format(Sys.Date(), "%Y"), ". Consumption of Aquatic Products. In: Fisheries and Aquaculture. Rome. [Cited ", format(Sys.time(), "%A, %B %d %Y"), "]. 
@@ -134,7 +148,9 @@ server <- function(input, output, session) {
                     minSize = "0.1",
                     maxSize = "60",
                     tooltip = list(pointFormat = "Country or area: {point.country_name}<br>Species group: {point.faostat_group_name}<br>Year: {point.year}<br>Apparent consumption: {point.value_formatted}<br> Unit: kg/capita<br>")) %>%
-      hc_colorAxis(minColor = "#e4eef7", maxColor = '#377eb8') %>%
+      hc_colorAxis(minColor = "#e4eef7", 
+                   maxColor = '#377eb8',
+                   showInLegend = FALSE) %>%
       hc_title(text = title()) %>%
       hc_subtitle(text = subtitle()) %>%
       hc_mapNavigation(enabled = T) %>%
@@ -150,9 +166,11 @@ server <- function(input, output, session) {
                      )
                    ),
                    chartOptions = list(
-                     chart = list(
-                       backgroundColor = "#FFFFFF"
-                     )
+                     chart = list(backgroundColor = "#FFFFFF"),
+                     legend = list(bubbleLegend = list(enabled = TRUE, 
+                                                       color = '#377eb8', 
+                                                       borderColor = '#999999', 
+                                                       connectorColor = '#999999'))
                    ),
                    sourceWidth = 1920,
                    sourceHeight = 1080,
@@ -186,7 +204,7 @@ server <- function(input, output, session) {
       hc_xAxis(title = list(text = NULL)) %>%
       hc_yAxis(title = list(text = "Apparent consumption (kg/capita)")) %>%
       hc_title(text = title()) %>%
-      hc_subtitle(text = paste("Top 10 countries/territories", subtitle())) %>%
+      hc_subtitle(text = paste("Top 10 countries/territories.", subtitle())) %>%
       hc_caption(text = source) %>%
       hc_exporting(enabled = TRUE, 
                    buttons = list(

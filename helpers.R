@@ -20,7 +20,7 @@ map <- readRDS("map.RDS")
 # More user-friendly y axes on plots
 
 addUnits <- function(n) {
-  labels <- ifelse(n < 1000, round(n, 3),  # less than thousands
+  labels <- ifelse(n < 1000, round(n, 1),  # less than thousands
                    ifelse(n < 1e6, paste0(round(n/1e3, 1), ' thousand'),  # in thousands
                           ifelse(n < 1e9, paste0(round(n/1e6, 1), ' million'),  # in millions
                                  ifelse(n < 1e12, paste0(round(n/1e9, 1), ' billion'), # in billions
