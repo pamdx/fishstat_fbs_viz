@@ -5,9 +5,9 @@ account: pamdex
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12285064
-bundleId: 8834047
+bundleId: 10346472
 url: https://pamdex.shinyapps.io/fishstat_fbs_viz/
-when: 1720356453.12681
-lastSyncTime: 1720356453.12682
+when: 1748296346.29992
+lastSyncTime: 1748296346.29993
 asMultiple: FALSE
 asStatic: FALSE
