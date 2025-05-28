@@ -96,7 +96,6 @@ ui <- function(request){
                       )
              ),
              tags$head(
-               tags$style(HTML('* {font-family: Open Sans, sans-serif !important;')),
                tags$link(rel = "stylesheet", type = "text/css", href = "stylesheet.css")
              )
   )
