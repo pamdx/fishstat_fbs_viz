@@ -104,16 +104,24 @@ ui <- function(request){
 
 server <- function(input, output, session) {
   
-  # Map of consumption by country
+  # Save filtered data as a reactive variable to avoid a lot of code duplication
   
-  data_map <- reactive({
-    
+  filtered_data <- reactive({
+  
     {if (input$species_choice == 'All species') fbs_total
       else fbs_group} %>%
       filter(year == input$year) %>%
       filter(faostat_group_name %in% input$species_choice) %>%
-      filter(!is.na(supply_capita_kg)) %>%
-      filter(supply_capita_kg > 0) %>%# better not to show bubbles when per capita supply = 0
+      filter(!is.na(supply_capita_kg))
+    
+    })
+  
+  # Map of consumption by country
+  
+  data_map <- reactive({
+    
+    filtered_data() %>%
+      filter(supply_capita_kg > 0) %>% # better not to show bubbles when per capita supply = 0
       rename(z = supply_capita_kg) %>%
       mutate(value_formatted = addUnits(z))
     
@@ -121,11 +129,7 @@ server <- function(input, output, session) {
   
   data_average <- reactive({
     
-    {if (input$species_choice == 'All species') fbs_total
-      else fbs_group} %>%
-      filter(year == input$year) %>%
-      filter(faostat_group_name %in% input$species_choice) %>%
-      filter(!is.na(supply_capita_kg)) %>%
+    filtered_data() %>%
       summarise_at(c("total_food_supply", "population"), sum, na.rm = TRUE) %>%
       mutate(supply_capita_kg = total_food_supply/population*1000) %>%
       pull() %>%
@@ -191,11 +195,7 @@ server <- function(input, output, session) {
   
   data_chart <- reactive({
     
-    {if (input$species_choice == 'All species') fbs_total
-      else fbs_group} %>%
-      filter(year == input$year) %>%
-      filter(faostat_group_name %in% input$species_choice) %>%
-      filter(!is.na(supply_capita_kg)) %>%
+    filtered_data() %>%
       rename(z = supply_capita_kg) %>%
       mutate(value_formatted = addUnits(z)) %>%
       arrange(desc(z)) %>%
@@ -236,11 +236,7 @@ server <- function(input, output, session) {
   
   data_table <- reactive({
     
-    {if (input$species_choice == 'All species') fbs_total
-      else fbs_group} %>%
-      filter(year == input$year) %>%
-      filter(faostat_group_name %in% input$species_choice) %>%
-      filter(!is.na(supply_capita_kg)) %>%
+    filtered_data() %>%
       rename(z = supply_capita_kg) %>%
       mutate(value_formatted = addUnits(z)) %>%
       mutate(unit_name = "kg per capita") %>%
